@@ -23,6 +23,7 @@ class HashMap:
         self.size = size
         self.slots = size # available slots
         self.records = size * [2 * (None,)] # record is a 2-tuple
+        self.mask = size * [False] # boolean mask for deletion operation
         self.alpha = alpha
         self.ndigits = n
         # check if step and table length are coprime
@@ -63,6 +64,22 @@ class HashMap:
             None"""
         self.put(key, data)
 
+    def __delitem__(self, key: int) -> None:
+        """Method for deleting a record through its key using the del operator
+        ------------------------------------------------------------------------
+        Args:
+            key: record key
+        Returns:
+            None"""
+        pos = self.__search(key)
+        if self.records[pos][0] is None:
+            print(f"There is no entry for key={key} inside table")
+            return
+
+        self.records[pos] = 2 * (None,) # reset entry in table
+        self.mask[pos] = True # tag this entry for search method
+        self.slots +=1 # update available amount of slots
+
     def __len__(self) -> Tuple[int, int]:
         """Length method. Returns size of hash table and number of available
         slots."""
@@ -97,10 +114,13 @@ class HashMap:
         Returns:
             pos: position where found key or first None entry""" 
         found_key, _ = self.records[pos]
-        if found_key == key or found_key is None: # recursion termination
+        if found_key == key: # 1st termination case
             return pos
+        if found_key is None and self.mask[pos] == False: # 2nd termination case
+            return pos
+        new_pos = (pos + step) % self.size
 
-        return self.__linear_prob(key, pos + step, step) # probe next slot
+        return self.__linear_prob(key, new_pos, step) # probe next slot
 
     def __search(self, key) -> int:
         """Search method for computing index in self.values list.
@@ -137,9 +157,10 @@ class HashMap:
             key: record key
             data: Python object"""
         if self.slots < 1: # check if there is room in table
-            raise Exception("Unable to insert record. Not enough space") 
+            raise Exception("Unable to insert record. Not enough space")
 
         pos = self.__search(key)
-        if self.records[pos] is None:
+        if self.records[pos][0] is None:
             self.slots -= 1 # update number of available slots
-        self.records[pos] = (key, data) # update associated data            
+            self.mask[pos] = False # update flag value
+        self.records[pos] = (key, data) # update associated data
