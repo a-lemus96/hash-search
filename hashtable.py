@@ -2,20 +2,33 @@
 import math
 from typing import Tuple
 
-class MapHash:
+class HashMap:
     """Implementation of the Map ADT using a Hash Table."""
-    def __init__(self, size: int, alpha: float = 1/math.pi, n: int = 10):
+
+    # SPECIAL METHODS
+
+    def __init__(
+            self, 
+            size: int, 
+            alpha: float = 1 / math.pi, 
+            n: int = 10, 
+            step: int = 1):
         """Constructor method.
         ------------------------------------------------------------------------
         Args:
             size: > 0. Length of the hash table
             alpha: < 1. Multiplicative real number for hash fn
-            n: number of digits to consider for multiplicative hash fn"""
+            n: number of digits to consider for multiplicative hash fn
+            step: step size for linear probing"""
         self.size = size
         self.slots = size # available slots
         self.records = size * [2 * (None,)] # record is a 2-tuple
         self.alpha = alpha
         self.ndigits = n
+        # check if step and table length are coprime
+        if math.gcd(step, self.size) != 1:
+            raise Exception("Step size and len(table) must be coprime ints.")
+        self.step = step
 
     def __contains__(self, key: int) -> bool:
         """In operator.
@@ -60,6 +73,8 @@ class MapHash:
 
         return ' '.join(f"({str(k)}, {str(d)})" for k, d in self.records)
 
+    # PRIVATE METHODS
+
     def __hash(self, key) -> int:
         """Multiplicative hash method for integer-valued keys.
         ------------------------------------------------------------------------
@@ -67,9 +82,25 @@ class MapHash:
             key: record key
         Returns:
             int: hash table idx that key is mapped to"""
+        f_k = ((key * self.alpha) % 1) / 10**(-self.ndigits)
         
-        return int(((k * self.alpha) % 1) * 10**(-self.ndigits))
+        return int(f_k % self.size)
 
+    def __linear_prob(self, key: int, pos: int, step: int) -> int:
+        """Linear probing method for solving collisions in hash table. It may 
+        work with any step size such that step and table size are coprime.
+        ------------------------------------------------------------------------
+        Args:
+            key: record key
+            prev: table position to probe
+            step: step size
+        Returns:
+            pos: position where found key or first None entry""" 
+        found_key, _ = self.records[pos]
+        if found_key == key or found_key is None: # recursion termination
+            return pos
+
+        return self.__linear_prob(key, pos + step, step) # probe next slot
 
     def __search(self, key) -> int:
         """Search method for computing index in self.values list.
@@ -79,12 +110,11 @@ class MapHash:
         Returns:
             pos: position in hash table where key was found, otherwise -1"""
         pos = self.__hash(key)
-        found_key, _ = self.records[pos]
-        if found_key == key:
-            return pos
 
-        return -1
+        return self.__linear_prob(key, pos, self.step)
             
+
+    # PUBLIC METHODS
 
     def get(self, key) -> any:
         """Public method for getting an element associated to a key.
@@ -96,7 +126,7 @@ class MapHash:
                  present inside the table"""
         pos = self.__search(key)
         if pos >= 0:
-            return self.data[pos]
+            return self.records[pos]
         return None
 
     def put(self, key, data):
@@ -106,16 +136,10 @@ class MapHash:
         Args:
             key: record key
             data: Python object"""
-        if self.slots > 0: # check if there is room in table
-            pos = self.__search(key)
-            if pos < 0: # key is not present in table
-                
-            else: # key was found, update associated data
-                self.data[pos] = data
-        else:
-            raise Exception("Unable to insert record. Not enough space")
+        if self.slots < 1: # check if there is room in table
+            raise Exception("Unable to insert record. Not enough space") 
 
-        
-
-mh = MapHash(10)
-print(mh)
+        pos = self.__search(key)
+        if self.records[pos] is None:
+            self.slots -= 1 # update number of available slots
+        self.records[pos] = (key, data) # update associated data            
