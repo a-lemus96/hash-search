@@ -15,43 +15,53 @@ parser.add_argument("-n", default=5, type=int,
 args = parser.parse_args()
 
 t = table.HashMap(args.m)
-print(f"Initalized hash table:\n{t}\n")
+print(f"(*) Initalized hash table:\n{t}\n")
 m, n = args.m, args.n
 
 # create a list of random records to insert
 rand_keys = rand.sample(range(10**9), m)
 chars = string.ascii_letters + string.digits
 
-# try to insert m + 1 elements
+# try to insert m elements
 rand_strs = [''.join(rand.choice(chars) for _ in range(n)) for _ in range(m)]
 to_insert = [(key, string) for key, string in zip(rand_keys, rand_strs)]
-
 # insert records
 for key, data in to_insert:
     t[key] = data
 
 # print table after insertions
-print(f"Hash table after insertions:\n{t}\n{t.mask}\n")
+print(f"(*) Hash table after some insertions:\n{t}\n")
 
-# randomly select half the records to delete
+# randomly select a half of the records to delete
 to_delete = rand.sample(to_insert, m // 2)
-
 for key, _ in to_delete:
     del t[key]
-
 # print table after deletions
-print(f"Hash table after deletions:\n{t}\n{t.mask}\n")
+deleted = [key for key, _ in to_delete]
+print(f"(*) Hash table after deleting records with keys in {deleted}:\n{t}\n")
 
-# introduce a new half of data 
-rand_keys = rand.sample(range(10**9), m//2)
-rand_strs = [''.join(rand.choice(chars) for _ in range(n)) for _ in range(m//2)]
-to_insert = [(key, string) for key, string in zip(rand_keys, rand_strs)]
+# update/insert a third of the keys
+up_keys = rand.sample(rand_keys, m//3)
+up_strs = [''.join(rand.choice(chars) for _ in range(n)) for _ in range(m//3)]
+to_update = [(key, string) for key, string in zip(up_keys, up_strs)]
 
-# insert records
-for key, data in to_insert:
+# insert/update records
+for key, data in to_update:
     t[key] = data
 
-# print table after new insertions
-print(f"Hash table after new insertions:\n{t}\n{t.mask}\n")
+# print table after new insertions/updates
+updated = [key for key, _ in to_update]
+print(f"(*) Hash table after updating/inserting in keys {updated}:\n{t}\n")
 
-# search for a not existing key and try to delete it
+# search for the initial key values that were inserted into the table
+query_results = []
+for key in rand_keys:
+    query_results.append(t[key])
+print(f"(*) Query results for keys {rand_keys}:\n{query_results}\n")
+
+# attempt to delete some of the original keys
+rand_keys = rand.sample(rand_keys, m//3)
+print(f"(*) Deleting entries for some keys")
+for key in rand_keys:
+    del t[key]
+print(f"(*) Hash table after deleting records with keys {rand_keys}:\n{t}")

@@ -4,7 +4,8 @@ import random
 from typing import Tuple
 
 class HashMap:
-    """Implementation of the Map ADT using a Hash Table."""
+    """Implementation of the Map ADT using a Hash Table. Uses multiplicative
+    hashing approach and linear probing for solving collisions."""
 
     # SPECIAL METHODS
 
@@ -73,13 +74,18 @@ class HashMap:
         Returns:
             None"""
         pos = self.__search(key)
-        if self.records[pos] is None:
-            print(f"There is no entry for key={key} inside the table")
+        err_msg = f"No entry found for deleting associated record to key {key}"
+        if pos is not None:
+            if self.records[pos] is None:
+                print(err_msg)
+                return
+        
+            self.records[pos] = None # reset entry in table
+            self.mask[pos] = True # tag this entry for search method
+            self.slots +=1 # update available amount of slots
             return
-
-        self.records[pos] = None # reset entry in table
-        self.mask[pos] = True # tag this entry for search method
-        self.slots +=1 # update available amount of slots
+ 
+        print(err_msg)
 
     def __len__(self) -> Tuple[int, int]:
         """Length method. Returns size of hash table and number of available
@@ -184,11 +190,14 @@ class HashMap:
         Args:
             key: record key
             data: Python object"""
-        if self.slots < 1: # check if there is room in table
-            print(f"Unable to insert record ({key},{data}). Not enough space\n")
-            return
-
-        pos = self.__search(key, mode='put')
+        pos = self.__search(key) # perform search using 'get' mode
+        if pos is not None:
+            if self.records[pos] is not None:
+                self.records[pos] = (key, data) # update associated data
+                self.mask[pos] = False # update flag value
+                return
+ 
+        pos = self.__search(key, mode='put') # search using 'put' mode
         if pos is not None:
             if self.records[pos] is None:
                 self.slots -= 1 # update number of available slots
@@ -196,4 +205,4 @@ class HashMap:
             self.records[pos] = (key, data) # update associated data
             return
         
-        print(f"Unable to update ({key}, {data}). Record is not present")
+        print(f"No entry found for inserting associated record to key {key}")
