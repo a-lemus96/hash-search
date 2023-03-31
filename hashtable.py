@@ -206,3 +206,60 @@ class HashMap:
             return
         
         print(f"No entry found for inserting associated record to key {key}")
+
+class RevHashMap(HashMap):
+    """Hash map with collision solving rules modified. The last inserted record
+    now appears first in the chain of elements in collision instead of last, as 
+    HashMap datatype does."""
+
+
+    # SPECIAL METHODS
+
+    def __init__(
+            self, 
+            size: int, 
+            alpha: float = 1 / math.pi, 
+            n: int = 10, 
+            step: int = 1):
+        """Constructor method.
+        ------------------------------------------------------------------------
+        Args:
+            size: > 0. Length of the hash table
+            alpha: < 1. Multiplicative real number for hash fn
+            n: number of digits to consider for multiplicative hash fn
+            step: step size for linear probing"""
+        super().__init__(size, size, alpha, n, step)
+
+    # PRIVATE METHODS
+
+    def __shift(self, key):
+        """Shift elements from key to the right up to the first None occurrence"""
+        
+
+    # PUBLIC METHODS
+
+    def put(self, key, data)
+        """Add new data value. If an element with the same key already exists,
+        replace it with the new one.
+        ------------------------------------------------------------------------
+        Args:
+            key: record key
+            data: Python object"""
+        pos = self.__search(key) # perform search using 'get' mode
+        if pos is not None:
+            if self.records[pos] is not None:
+                self.records[pos] = (key, data) # update associated data
+                self.mask[pos] = False # update flag value
+                return
+ 
+        pos = self.__search(key, mode='put') # search using 'put' mode
+        if pos is not None:
+            if self.records[pos] is None:
+                self.slots -= 1 # update number of available slots
+                self.mask[pos] = False # update flag value
+            self.records[pos] = (key, data) # update associated data
+            return
+        
+        print(f"No entry found for inserting associated record to key {key}")
+
+
