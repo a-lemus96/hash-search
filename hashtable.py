@@ -1,5 +1,6 @@
 # stdlib modules
 import math
+import random
 from typing import Tuple
 
 class HashMap:
@@ -22,7 +23,7 @@ class HashMap:
             step: step size for linear probing"""
         self.size = size
         self.slots = size # available slots
-        self.records = size * [2 * (None,)] # record is a 2-tuple
+        self.records = (size) * [None]
         self.mask = size * [False] # boolean mask for deletion operation
         self.alpha = alpha
         self.ndigits = n
@@ -39,7 +40,7 @@ class HashMap:
         Returns:
             bool: True if key is present, False otherwise"""
         pos = self.__search(key)
-        if pos>=0:
+        if self.records[pos] is not None:
             return True
         return False
 
@@ -72,11 +73,11 @@ class HashMap:
         Returns:
             None"""
         pos = self.__search(key)
-        if self.records[pos][0] is None:
-            print(f"There is no entry for key={key} inside table")
+        if self.records[pos] is None:
+            print(f"There is no entry for key={key} inside the table")
             return
 
-        self.records[pos] = 2 * (None,) # reset entry in table
+        self.records[pos] = None # reset entry in table
         self.mask[pos] = True # tag this entry for search method
         self.slots +=1 # update available amount of slots
 
@@ -88,7 +89,7 @@ class HashMap:
     def __str__(self):
         """String representation method"""
 
-        return ' '.join(f"({str(k)}, {str(d)})" for k, d in self.records)
+        return '[' + ', '.join(f"{str(record)}" for record in self.records) + ']'
 
     # PRIVATE METHODS
 
@@ -103,35 +104,61 @@ class HashMap:
         
         return int(f_k % self.size)
 
-    def __linear_prob(self, key: int, pos: int, step: int) -> int:
+    def __linear_prob(
+            self, 
+            key: int, 
+            pos: int, 
+            count: int, 
+            step: int,
+            mode: str = 'get'
+            ) -> int:
         """Linear probing method for solving collisions in hash table. It may 
         work with any step size such that step and table size are coprime.
         ------------------------------------------------------------------------
         Args:
             key: record key
-            prev: table position to probe
+            pos: table position to probe
+            count: counter of iterations
             step: step size
+            mode: 'put' or 'get'
         Returns:
             pos: position where found key or first None entry""" 
-        found_key, _ = self.records[pos]
-        if found_key == key: # 1st termination case
-            return pos
-        if found_key is None and self.mask[pos] == False: # 2nd termination case
-            return pos
+        record = self.records[pos]
         new_pos = (pos + step) % self.size
+        count += 1
 
-        return self.__linear_prob(key, new_pos, step) # probe next slot
+        if count > self.size: # 1st termination case
+            return None
 
-    def __search(self, key) -> int:
+        if record is None and mode == 'put': # 2nd termination case
+            return pos
+
+        if record is None and mode == 'get': # 3rd termination case
+            if self.mask[pos] == True:
+                # probe next slot
+                return self.__linear_prob(key, new_pos, count, step, mode)
+            else:
+                return pos
+        
+        found_key, _ = record
+        if found_key == key: # 3rd termination case
+            return pos
+
+        # probe next slot
+        return self.__linear_prob(key, new_pos, count, step, mode) 
+
+    def __search(self, key: int, mode: str = 'get') -> int:
         """Search method for computing index in self.values list.
         ------------------------------------------------------------------------
         Args:
             key: record key
+            mode: 'inserting' or 'retrieving' record
         Returns:
             pos: position in hash table where key was found, otherwise -1"""
         pos = self.__hash(key)
+        count = 0 # counter to avoid exceeding max recursion depth
 
-        return self.__linear_prob(key, pos, self.step)
+        return self.__linear_prob(key, pos, count, self.step, mode)
             
 
     # PUBLIC METHODS
@@ -145,22 +172,28 @@ class HashMap:
             Any: Python object associated to that key. None if key is not
                  present inside the table"""
         pos = self.__search(key)
-        if pos >= 0:
-            return self.records[pos]
+        if pos is not None:
+            if self.records[pos] is not None:
+                return self.records[pos][1]
         return None
 
     def put(self, key, data):
-        """Add new data value. If an element with the same key already exists, 
+        """Add new data value. If an element with the same key already exists,
         replace it with the new one.
         ------------------------------------------------------------------------
         Args:
             key: record key
             data: Python object"""
         if self.slots < 1: # check if there is room in table
-            raise Exception("Unable to insert record. Not enough space")
+            print(f"Unable to insert record ({key},{data}). Not enough space\n")
+            return
 
-        pos = self.__search(key)
-        if self.records[pos][0] is None:
-            self.slots -= 1 # update number of available slots
-            self.mask[pos] = False # update flag value
-        self.records[pos] = (key, data) # update associated data
+        pos = self.__search(key, mode='put')
+        if pos is not None:
+            if self.records[pos] is None:
+                self.slots -= 1 # update number of available slots
+                self.mask[pos] = False # update flag value
+            self.records[pos] = (key, data) # update associated data
+            return
+        
+        print(f"Unable to update ({key}, {data}). Record is not present")
