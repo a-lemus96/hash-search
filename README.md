@@ -22,7 +22,7 @@ The table is displayed after applying each operation. Here is a screenshot of ho
 ---
 The script `test_reverse.py` contains the same battery of tests for evaluating the correctness of the hash table with reversed linear probing for handling collisions. Simply run `python test_reverse.py -m=M -n=N` being `M` the size of the table and `N` the number of random character for each data associated to each key. The script performs the same tests as in the case aforementioned. Here is a screenshot of how the output format should look like:
 
-![image](https://user-images.githubusercontent.com/95151624/229262421-93f27096-f5b5-4455-9ec7-f643002f54a6.png)
+![image](https://user-images.githubusercontent.com/95151624/229262708-c56c97eb-bc73-4ba8-8c1d-901259e7b7db.png)
 
 ### Hash tables performance for implementing 1-D range search
 ---
